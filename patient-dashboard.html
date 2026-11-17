@@ -1,0 +1,2646 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#175638">
+  <meta name="description" content="Medminder patient medicine schedule and reminders">
+  <title>Medminder | Patient Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --green: #175638;
+      --dark: #10442b;
+      --green-light: #e7f4eb;
+      --green-soft: #f1f8f3;
+      --bg: #f4f8f5;
+      --white: #ffffff;
+      --text: #24352b;
+      --muted: #718078;
+      --border: #e0eae2;
+      --danger: #b42318;
+      --shadow: 0 5px 20px rgba(20, 65, 39, .045);
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+    }
+
+    html {
+      overflow: hidden;
+    }
+
+    body {
+      min-width: 320px;
+      font-family: Inter, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: .55;
+      cursor: wait;
+    }
+
+    button:focus-visible,
+    input:focus-visible {
+      outline: 3px solid rgba(23, 86, 56, .25);
+      outline-offset: 3px;
+    }
+
+    [hidden], .hidden {
+      display: none !important;
+    }
+
+    /* LOADING */
+
+    .loading {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: var(--bg);
+      text-align: center;
+    }
+
+    .loading-card {
+      width: min(100%, 350px);
+      padding: 32px 24px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: white;
+      box-shadow: var(--shadow);
+    }
+
+    .loading-mark {
+      display: grid;
+      place-items: center;
+      width: 58px;
+      height: 58px;
+      margin: auto;
+      border-radius: 17px;
+      background: var(--green-light);
+      color: var(--green);
+      font-size: 28px;
+    }
+
+    .spinner {
+      width: 30px;
+      height: 30px;
+      margin: 18px auto 0;
+      border: 3px solid var(--green-light);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* APPLICATION */
+
+    .app {
+      display: none;
+      grid-template-columns: 250px minmax(0, 1fr);
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    .app.ready {
+      display: grid;
+    }
+
+    /* DOSE TRACKING */
+
+    .reminder-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 15px;
+      padding: 18px;
+      margin-bottom: 14px;
+      background: #ffffff;
+      border: 1px solid #e3ebe5;
+      border-radius: 16px;
+      transition: border-color .2s ease, box-shadow .2s ease;
+      min-width: 0;
+    }
+
+    .reminder-item:hover {
+      border-color: #b8d7c1;
+      box-shadow: 0 5px 16px rgba(23, 86, 56, .06);
+    }
+
+    .medicine-icon {
+      width: 46px;
+      height: 46px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #e7f4eb;
+      color: #175638;
+      border-radius: 13px;
+      font-size: 22px;
+    }
+
+    .reminder-item .item-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .reminder-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-bottom: 7px;
+    }
+
+    .reminder-heading .item-title {
+      margin: 0;
+      color: #24352b;
+      font-size: 15px;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .reminder-item .item-description {
+      margin: 5px 0;
+      color: #718078;
+      font-size: 13px;
+      line-height: 1.5;
+      white-space: pre-line;
+    }
+
+    .reminder-instructions {
+      margin: 5px 0;
+      color: #718078;
+      font-size: 12px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .reminder-time {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 7px;
+      color: #175638;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .dose-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 30px;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .status-icon {
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .dose-pending {
+      background: #fff5df;
+      color: #986515;
+    }
+
+    .dose-taken {
+      background: #e5f5e9;
+      color: #17643b;
+    }
+
+    .dose-missed {
+      background: #fff0e5;
+      color: #b45a1c;
+    }
+
+    .dose-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 15px;
+    }
+
+    .dose-action-button {
+      flex: 1 1 140px;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 14px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: .2s ease;
+    }
+
+    .dose-action-button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .taken-button {
+      border: 1px solid #175638;
+      background: #175638;
+      color: #ffffff;
+    }
+
+    .taken-button:hover:not(:disabled) {
+      background: #10442b;
+    }
+
+    .missed-button {
+      border: 1px solid #e8c4b1;
+      background: #fff8f4;
+      color: #b45a1c;
+    }
+
+    .missed-button:hover:not(:disabled) {
+      background: #fff0e5;
+    }
+
+    .dose-completion-message {
+      margin-top: 13px;
+      padding: 10px 12px;
+      border-radius: 9px;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+
+    .completion-taken {
+      background: #eaf6ed;
+      color: #17643b;
+    }
+
+    .completion-missed {
+      background: #fff2e8;
+      color: #a6531b;
+    }
+
+    /* SIDEBAR */
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      min-height: 0;
+      padding: 26px 17px 20px;
+      overflow-y: auto;
+      background: var(--white);
+      border-right: 1px solid var(--border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 2px 8px 15px;
+    }
+
+    .brand-mark {
+      display: grid;
+      flex: 0 0 44px;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: var(--green-light);
+      color: var(--green);
+      font-size: 24px;
+    }
+
+    .brand-name {
+      color: var(--green);
+      font-size: 21px;
+      font-weight: 800;
+      letter-spacing: -.7px;
+    }
+
+    .brand-caption {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .nav-label {
+      margin: 9px 10px 12px;
+      color: #91a097;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    nav:not(.bottom-nav) {
+      display: grid;
+      gap: 7px;
+    }
+
+    .nav-btn {
+      width: 100%;
+      min-height: 44px;
+      padding: 12px;
+      border: 0;
+      border-radius: 11px;
+      background: transparent;
+      color: #526259;
+      text-align: left;
+      font-size: 13px;
+      font-weight: 600;
+      transition: background .18s, color .18s;
+    }
+
+    .nav-btn:hover,
+    .nav-btn.active {
+      background: var(--green-light);
+      color: var(--green);
+      font-weight: 750;
+    }
+
+    .sidebar-bottom {
+      margin-top: auto;
+    }
+
+    .user-card {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 14px 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    .avatar, .top-avatar {
+      display: grid;
+      flex: 0 0 41px;
+      place-items: center;
+      width: 41px;
+      height: 41px;
+      border-radius: 50%;
+      background: var(--green-light);
+      color: var(--green);
+      font-weight: 800;
+    }
+
+    .user-info {
+      min-width: 0;
+    }
+
+    .user-name {
+      overflow: hidden;
+      font-size: 13px;
+      font-weight: 750;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .user-role {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .logout-button {
+      width: 100%;
+      min-height: 44px;
+      padding: 12px;
+      border: 0;
+      border-radius: 11px;
+      background: #fff1ef;
+      color: var(--danger);
+      text-align: left;
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .logout-button:hover {
+      background: #ffe4e2;
+    }
+
+    /* MAIN */
+
+    .main {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .topbar {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      flex: 0 0 auto;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      min-height: 84px;
+      padding: 17px 30px;
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topbar h1 {
+      margin: 0 0 5px;
+      font-size: 21px;
+      font-weight: 800;
+      letter-spacing: -.5px;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .profile-shortcut {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .profile-text b {
+      font-size: 12px;
+    }
+
+    .profile-name-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .account-role-badge {
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      padding: 3px 8px;
+      border: 1px solid #cfe5d5;
+      border-radius: 999px;
+      background: #e7f4eb;
+      color: #175638;
+      font-size: 9px;
+      font-weight: 800;
+      line-height: 1.35;
+      white-space: nowrap;
+    }
+
+    .content {
+      flex: 1 1 auto;
+      min-height: 0;
+      padding: 26px 30px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior-y: contain;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-gutter: stable;
+    }
+
+    .page {
+      display: none;
+      width: 100%;
+      max-width: 1450px;
+      margin: 0 auto;
+    }
+
+    .page.active {
+      display: block;
+      animation: pageIn .2s ease;
+    }
+
+    @keyframes pageIn {
+      from { opacity: .65; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* NOTICES */
+
+    .notice {
+      display: none;
+      margin: 12px 0;
+      padding: 13px 15px;
+      border-radius: 11px;
+      font-size: 13px;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+
+    .notice.show {
+      display: block;
+    }
+
+    .notice.success {
+      background: #effaf2;
+      color: #17663a;
+    }
+
+    .notice.error {
+      background: #fff0ef;
+      color: var(--danger);
+    }
+
+    .notice.info {
+      background: var(--green-light);
+      color: var(--dark);
+    }
+
+    /* WELCOME */
+
+    .welcome {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      min-height: 150px;
+      margin-bottom: 20px;
+      padding: 27px 30px;
+      border-radius: 19px;
+      overflow: hidden;
+      background: linear-gradient(120deg, #10442b, #28794d);
+      color: white;
+    }
+
+    .welcome::after {
+      content: "";
+      position: absolute;
+      right: 75px;
+      bottom: -100px;
+      width: 230px;
+      height: 230px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 50%;
+    }
+
+    .welcome h2 {
+      margin: 0 0 9px;
+      font-size: 25px;
+      letter-spacing: -.7px;
+    }
+
+    .welcome p {
+      max-width: 570px;
+      margin: 0;
+      color: #e2eee6;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .welcome-icon {
+      z-index: 1;
+      flex: 0 0 auto;
+      font-size: 49px;
+    }
+
+    /* STATISTICS */
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 21px;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-width: 0;
+      padding: 19px 20px;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      background: white;
+      box-shadow: var(--shadow);
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .stat-number {
+      margin-top: 9px;
+      color: var(--green);
+      font-size: 29px;
+      font-weight: 800;
+    }
+
+    .stat-caption {
+      margin-top: 4px;
+      color: #94a098;
+      font-size: 10px;
+    }
+
+    /* PANELS */
+
+    .panel {
+      min-width: 0;
+      margin-bottom: 19px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: white;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 20px;
+      border-bottom: 1px solid #edf1ee;
+    }
+
+    .panel-heading h2 {
+      margin: 0;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .panel-heading p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .panel-body {
+      padding: 19px 20px;
+    }
+
+    .section-heading {
+      margin: 0 0 7px;
+      color: var(--text);
+      font-size: 21px;
+      font-weight: 800;
+      letter-spacing: -.5px;
+    }
+
+    .section-description {
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    /* BUTTONS */
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 43px;
+      padding: 11px 15px;
+      border: 0;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 750;
+      transition: background .15s, transform .15s;
+    }
+
+    .btn:active {
+      transform: scale(.98);
+    }
+
+    .btn-primary {
+      background: var(--green);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--dark);
+    }
+
+    .btn-secondary {
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--green);
+    }
+
+    .btn-secondary:hover {
+      background: var(--green-light);
+    }
+
+    .btn-danger {
+      background: #fff0ef;
+      color: var(--danger);
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    /* CONTENT GRID */
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(270px, .9fr);
+      gap: 19px;
+      align-items: start;
+    }
+
+    /* TAGS */
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 10px;
+      border-radius: 20px;
+      background: #f0f5f1;
+      color: #52685a;
+      font-size: 10px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .tag.green {
+      background: #e3f6e9;
+      color: #17663a;
+    }
+
+    .tag.orange {
+      background: #fff1d9;
+      color: #89550e;
+    }
+
+    .connection-status {
+      padding: 7px 10px;
+      border-radius: 20px;
+      background: #fff1d9;
+      color: #89550e;
+      font-size: 10px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .connection-status.connected {
+      background: #e3f6e9;
+      color: #17663a;
+    }
+
+    /* MEDICINE RECORDS */
+
+    .record-list {
+      display: grid;
+      gap: 11px;
+    }
+
+    .history-date-controls {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .history-date-controls button {
+      min-width: 38px;
+      min-height: 38px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: white;
+      color: var(--text);
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    .history-date-controls button:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+    }
+
+    .history-date-controls label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .history-date-controls input[type="date"] {
+      min-height: 38px;
+      padding: 7px 10px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: white;
+      color: var(--text);
+      font: inherit;
+    }
+
+    .record {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 13px;
+      min-width: 0;
+      padding: 15px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: white;
+    }
+
+    .record-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .record h3 {
+      margin: 0 0 7px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 750;
+      overflow-wrap: anywhere;
+    }
+
+    .record p {
+      margin: 4px 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+      white-space: pre-line;
+    }
+
+    .record-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      align-items: center;
+    }
+
+    .record-actions button {
+      min-height: 37px;
+      padding: 9px 12px;
+      border: 0;
+      border-radius: 9px;
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .take-button {
+      background: var(--green);
+      color: white;
+    }
+
+    .secondary-button {
+      background: #fff1d9;
+      color: #89550e;
+    }
+
+    .empty-state {
+      padding: 29px 14px;
+      border: 1px dashed var(--border);
+      border-radius: 13px;
+      background: #fbfdfb;
+      color: var(--muted);
+      text-align: center;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .empty-icon {
+      margin-bottom: 8px;
+      font-size: 26px;
+    }
+
+    /* QR CODE */
+
+    .qr-wrap {
+      display: grid;
+      place-items: center;
+      min-height: 220px;
+      padding: 18px;
+      margin: 15px 0;
+      border: 1px dashed #cbded0;
+      border-radius: 14px;
+      background: #fbfdfb;
+    }
+
+    #patientQrCode {
+      max-width: 100%;
+      text-align: center;
+    }
+
+    #patientQrCode canvas,
+    #patientQrCode img {
+      display: block;
+      width: auto !important;
+      max-width: 100%;
+      height: auto !important;
+      margin: 0 auto;
+      border-radius: 5px;
+    }
+
+    .uid-value {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #f7faf7;
+      color: #52685a;
+      font-size: 11px;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+      user-select: text;
+    }
+
+    .connection-permission {
+      margin-top: 18px;
+      padding: 15px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #f8fbf8;
+    }
+
+    .connection-permission label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.5;
+    }
+
+    .connection-permission input {
+      flex: 0 0 auto;
+      width: 17px;
+      height: 17px;
+      margin: 1px 0 0;
+      accent-color: var(--green);
+    }
+
+    .connection-permission p {
+      margin: 8px 0 0 27px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.7;
+    }
+
+    #connectionRequestsPanel {
+      margin-top: 19px;
+    }
+
+    #connectionRequestsPanel button {
+      min-height: 42px;
+      touch-action: manipulation;
+    }
+
+    #connectionRequestsPanel article {
+      overflow-wrap: anywhere;
+    }
+
+    /* NEW: HELP BUTTON */
+
+    .help-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 40px;
+      padding: 9px 13px;
+      border: 1px solid #cbded0;
+      border-radius: 10px;
+      background: var(--green-light);
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 750;
+      white-space: nowrap;
+      transition: .2s ease;
+    }
+
+    .help-button:hover {
+      background: #d7ebdd;
+    }
+
+    /* NEW: USER GUIDE MODAL */
+
+    .user-guide-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(10, 25, 15, .65);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+
+    .user-guide-overlay[hidden] {
+      display: none !important;
+    }
+
+    .user-guide-modal {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 760px;
+      max-height: min(88vh, 850px);
+      max-height: min(88dvh, 850px);
+      overflow: hidden;
+      border-radius: 19px;
+      background: white;
+      box-shadow: 0 20px 60px rgba(0,0,0,.2);
+      animation: guideAppear .22s ease;
+    }
+
+    @keyframes guideAppear {
+      from {
+        opacity: 0;
+        transform: translateY(12px) scale(.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .user-guide-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      flex-shrink: 0;
+      padding: 21px 23px;
+      background: linear-gradient(120deg, #10442b, #28794d);
+      color: white;
+    }
+
+    .user-guide-header h2 {
+      margin: 0 0 6px;
+      font-size: 20px;
+    }
+
+    .user-guide-header p {
+      margin: 0;
+      color: #e2eee6;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .user-guide-close {
+      display: grid;
+      flex: 0 0 38px;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border: 1px solid rgba(255,255,255,.3);
+      border-radius: 10px;
+      background: rgba(255,255,255,.12);
+      color: white;
+      font-size: 25px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .user-guide-close:hover {
+      background: rgba(255,255,255,.22);
+    }
+
+    .user-guide-body {
+      flex: 1;
+      min-height: 0;
+      padding: 22px 25px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .guide-intro {
+      margin: 0 0 20px;
+      padding: 15px;
+      border-radius: 12px;
+      background: var(--green-soft);
+      color: #52685a;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .guide-step {
+      padding: 17px 0;
+      border-bottom: 1px solid #edf1ee;
+    }
+
+    .guide-step:last-of-type {
+      border-bottom: none;
+    }
+
+    .guide-step h3 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 11px;
+      color: var(--green);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .guide-step-number {
+      display: grid;
+      flex: 0 0 29px;
+      place-items: center;
+      width: 29px;
+      height: 29px;
+      border-radius: 9px;
+      background: var(--green-light);
+      color: var(--green);
+      font-size: 12px;
+    }
+
+    .guide-step p,
+    .guide-step li {
+      color: #526259;
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    .guide-step p {
+      margin: 7px 0;
+    }
+
+    .guide-step ul,
+    .guide-step ol {
+      padding-left: 22px;
+      margin: 8px 0;
+    }
+
+    .guide-step li {
+      margin-bottom: 5px;
+    }
+
+    .guide-tip {
+      margin-top: 12px;
+      padding: 13px 15px;
+      border-radius: 11px;
+      background: #fff8e9;
+      color: #805a19;
+      font-size: 11px;
+      line-height: 1.7;
+    }
+
+    .guide-important {
+      padding: 16px;
+      margin-top: 17px;
+      border: 1px solid #cde5d3;
+      border-radius: 12px;
+      background: var(--green-soft);
+    }
+
+    .guide-important h3 {
+      margin: 0 0 9px;
+      color: var(--green);
+      font-size: 14px;
+    }
+
+    .guide-important ul {
+      padding-left: 19px;
+      margin: 0;
+    }
+
+    .guide-important li {
+      margin: 7px 0;
+      color: #526259;
+      font-size: 11px;
+      line-height: 1.7;
+    }
+
+    .user-guide-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+      padding: 14px 22px;
+      border-top: 1px solid var(--border);
+      background: white;
+    }
+
+    .user-guide-footer span {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .guide-done-button {
+      min-height: 42px;
+      padding: 10px 22px;
+      border: none;
+      border-radius: 10px;
+      background: var(--green);
+      color: white;
+      font-size: 12px;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    .guide-done-button:hover {
+      background: var(--dark);
+    }
+
+    /* MOBILE NAV */
+
+    .bottom-nav {
+      display: none;
+    }
+
+    .footer-note {
+      padding: 13px 0 5px;
+      color: #91a097;
+      text-align: center;
+      font-size: 10px;
+      line-height: 1.6;
+    }
+
+    /* MEDICINE REMINDER MODAL */
+
+    .medicine-reminder-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(10, 25, 15, .65);
+      backdrop-filter: blur(5px);
+    }
+
+    .medicine-reminder-overlay[hidden] {
+      display: none !important;
+    }
+
+    .medicine-reminder-modal {
+      width: 100%;
+      max-width: 390px;
+      max-height: calc(100dvh - 36px);
+      overflow-y: auto;
+      padding: 28px 22px;
+      border-radius: 24px;
+      background: #ffffff;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,.2);
+      animation: reminderAppear .25s ease;
+    }
+
+    @keyframes reminderAppear {
+      from {
+        opacity: 0;
+        transform: translateY(15px) scale(.97);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .reminder-bell {
+      width: 70px;
+      height: 70px;
+      margin: 0 auto 16px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #e7f4eb;
+      font-size: 32px;
+      animation: bellPulse 1.5s infinite;
+    }
+
+    @keyframes bellPulse {
+      50% { transform: scale(1.08); }
+    }
+
+    .reminder-eyebrow {
+      color: #175638;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+    }
+
+    .medicine-reminder-modal h2 {
+      color: #173b27;
+      font-size: 22px;
+      margin: 8px 0 18px;
+    }
+
+    .reminder-medicine-details {
+      padding: 18px;
+      border-radius: 15px;
+      background: #f2f7f3;
+    }
+
+    .reminder-medicine-details h3 {
+      margin: 0 0 8px;
+      color: #175638;
+      font-size: 19px;
+      overflow-wrap: anywhere;
+    }
+
+    .reminder-medicine-details p {
+      margin: 5px 0;
+      color: #64756a;
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .reminder-message {
+      color: #64756a;
+      font-size: 13px;
+      margin: 18px 0;
+    }
+
+    .reminder-modal-actions {
+      display: grid;
+      gap: 10px;
+    }
+
+    .reminder-modal-actions button,
+    .stop-sound-button {
+      min-height: 48px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .modal-taken-button {
+      border: none;
+      background: #175638;
+      color: white;
+    }
+
+    .modal-snooze-button {
+      border: 1px solid #dce8df;
+      background: white;
+      color: #175638;
+    }
+
+    .stop-sound-button {
+      margin-top: 12px;
+      padding: 0 15px;
+      border: none;
+      background: transparent;
+      color: #718078;
+    }
+
+    /* TABLET */
+
+    @media (max-width: 1050px) {
+      .app {
+        grid-template-columns: 220px minmax(0, 1fr);
+      }
+
+      .content {
+        padding: 22px;
+      }
+
+      .content-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    /* MOBILE */
+
+    @media (max-width: 850px) {
+      html, body {
+        height: 100%;
+        overflow: hidden;
+      }
+
+      .app,
+      .app.ready {
+        display: block;
+        height: 100vh;
+        height: 100dvh;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .main {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .topbar {
+        min-height: 70px;
+        padding: 12px 17px;
+      }
+
+      .topbar h1 {
+        font-size: 18px;
+      }
+
+      .content {
+        padding: 17px 15px 25px;
+        padding-bottom: calc(100px + env(safe-area-inset-bottom));
+        scrollbar-gutter: auto;
+      }
+
+      .page {
+        max-width: 680px;
+      }
+
+      .bottom-nav {
+        position: fixed;
+        z-index: 30;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        display: flex;
+        align-items: stretch;
+        justify-content: space-around;
+        gap: 3px;
+        min-height: 65px;
+        padding: 7px 5px;
+        padding-bottom: max(7px, env(safe-area-inset-bottom));
+        border-top: 1px solid var(--border);
+        background: rgba(255,255,255,.97);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        box-shadow: 0 -5px 20px rgba(20,65,39,.06);
+      }
+
+      .app:not(.ready) ~ .bottom-nav {
+        display: none;
+      }
+
+      .bottom-nav .nav-btn {
+        display: flex;
+        flex: 1 1 0;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        min-width: 0;
+        min-height: 48px;
+        padding: 5px 2px;
+        border-radius: 10px;
+        font-size: 10px;
+        line-height: 1.3;
+        text-align: center;
+      }
+
+      .bottom-nav .nav-btn.active {
+        background: var(--green-light);
+        color: var(--green);
+      }
+
+      .content-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+      }
+
+      .stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 9px;
+      }
+
+      .stat {
+        display: block;
+        padding: 14px 12px;
+      }
+
+      .stat-label {
+        font-size: 10px;
+        line-height: 1.4;
+      }
+
+      .stat-number {
+        margin-top: 8px;
+        font-size: 24px;
+      }
+
+      .stat-caption {
+        display: none;
+      }
+
+      .profile-text {
+        display: block;
+        min-width: 0;
+        line-height: 1.35;
+      }
+
+      .profile-name-row {
+        gap: 5px;
+      }
+
+      #headerAccountName {
+        display: inline-block;
+        max-width: clamp(58px, 22vw, 125px);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 11px;
+      }
+
+      .account-role-badge {
+        padding: 3px 6px;
+        font-size: 8px;
+      }
+
+      .welcome {
+        min-height: 130px;
+        padding: 21px;
+      }
+
+      .welcome h2 {
+        font-size: 21px;
+      }
+
+      .welcome p {
+        font-size: 12px;
+      }
+
+      .welcome-icon {
+        font-size: 36px;
+      }
+
+      .panel {
+        margin-bottom: 15px;
+      }
+
+      .reminder-item {
+        gap: 11px;
+        padding: 14px;
+        border-radius: 13px;
+      }
+
+      .medicine-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 19px;
+      }
+
+      .reminder-heading {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 7px;
+      }
+
+      .reminder-heading .item-title {
+        font-size: 14px;
+      }
+
+      .dose-actions {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .dose-action-button {
+        width: 100%;
+        flex-basis: auto;
+        min-height: 46px;
+        font-size: 13px;
+      }
+    }
+
+    /* SMALL PHONES */
+
+    @media (max-width: 520px) {
+      .topbar {
+        min-height: 65px;
+        padding: 11px 10px;
+        gap: 8px;
+      }
+
+      .topbar > div:last-child {
+        gap: 7px !important;
+      }
+
+      .topbar h1 {
+        font-size: 16px;
+      }
+
+      .topbar .muted {
+        font-size: 10px;
+      }
+
+      .top-avatar {
+        flex-basis: 37px;
+        width: 37px;
+        height: 37px;
+      }
+
+      .content {
+        padding: 13px 12px;
+        padding-bottom: calc(94px + env(safe-area-inset-bottom));
+      }
+
+      .welcome {
+        gap: 9px;
+        min-height: 122px;
+        margin-bottom: 13px;
+        padding: 17px;
+        border-radius: 15px;
+      }
+
+      .welcome h2 {
+        font-size: 18px;
+      }
+
+      .welcome p {
+        font-size: 11px;
+        line-height: 1.6;
+      }
+
+      .welcome-icon {
+        font-size: 29px;
+      }
+
+      .stats {
+        gap: 7px;
+        margin-bottom: 15px;
+      }
+
+      .stat {
+        padding: 12px 9px;
+        border-radius: 12px;
+      }
+
+      .stat-label {
+        font-size: 9px;
+      }
+
+      .stat-number {
+        font-size: 22px;
+      }
+
+      .panel {
+        border-radius: 13px;
+      }
+
+      .panel-heading {
+        padding: 14px;
+      }
+
+      .panel-heading h2 {
+        font-size: 13px;
+      }
+
+      .panel-heading p {
+        font-size: 10px;
+      }
+
+      .panel-body {
+        padding: 13px;
+      }
+
+      .section-heading {
+        font-size: 19px;
+      }
+
+      .section-description {
+        margin-bottom: 15px;
+        font-size: 11px;
+      }
+
+      .record {
+        flex-direction: column;
+        gap: 11px;
+        padding: 13px;
+        border-radius: 11px;
+      }
+
+      .record-main {
+        width: 100%;
+      }
+
+      .record h3 {
+        font-size: 13px;
+      }
+
+      .record p {
+        font-size: 11px;
+      }
+
+      .record-actions {
+        width: 100%;
+        gap: 7px;
+      }
+
+      .record-actions button {
+        flex: 1 1 0;
+        min-height: 42px;
+      }
+
+      .qr-wrap {
+        min-height: 195px;
+        padding: 13px;
+      }
+
+      .qr-wrap canvas,
+      .qr-wrap img {
+        max-width: min(100%, 180px);
+      }
+
+      .button-row {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .button-row .btn {
+        width: 100%;
+      }
+
+      .connection-permission {
+        padding: 12px;
+      }
+
+      .connection-permission label {
+        font-size: 11px;
+      }
+
+      .connection-permission p {
+        margin-left: 26px;
+        font-size: 10px;
+      }
+
+      #connectionRequestsPanel {
+        padding: 16px !important;
+        border-radius: 14px !important;
+      }
+
+      #connectionRequestsPanel h2 {
+        font-size: 16px !important;
+      }
+
+      #connectionRequestsPanel article {
+        padding: 13px !important;
+      }
+
+      #connectionRequestsPanel article > div:last-child {
+        gap: 8px !important;
+      }
+
+      #connectionRequestsPanel article button {
+        min-width: 0;
+        padding: 10px 7px !important;
+        font-size: 11px;
+      }
+
+      .footer-note {
+        font-size: 9px;
+      }
+
+      .medicine-reminder-modal {
+        padding: 24px 18px;
+      }
+
+      .medicine-reminder-modal h2 {
+        font-size: 20px;
+      }
+
+      .help-button {
+        min-height: 36px;
+        padding: 8px 9px;
+        font-size: 10px;
+        gap: 5px;
+      }
+
+      .user-guide-overlay {
+        padding: 9px;
+      }
+
+      .user-guide-modal {
+        max-height: 92vh;
+        max-height: 92dvh;
+        border-radius: 15px;
+      }
+
+      .user-guide-header {
+        padding: 16px;
+      }
+
+      .user-guide-header h2 {
+        font-size: 17px;
+      }
+
+      .user-guide-header p {
+        font-size: 10px;
+      }
+
+      .user-guide-body {
+        padding: 14px 16px;
+      }
+
+      .guide-step {
+        padding: 14px 0;
+      }
+
+      .guide-step h3 {
+        font-size: 13px;
+      }
+
+      .guide-step p,
+      .guide-step li {
+        font-size: 11px;
+      }
+
+      .user-guide-footer {
+        padding: 11px 15px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .content {
+        padding-right: 9px;
+        padding-left: 9px;
+      }
+
+      .stats {
+        gap: 5px;
+      }
+
+      .stat {
+        padding: 10px 7px;
+      }
+
+      .stat-label {
+        font-size: 8px;
+      }
+
+      .stat-number {
+        font-size: 20px;
+      }
+
+      .bottom-nav {
+        gap: 1px;
+      }
+
+      .bottom-nav .nav-btn {
+        font-size: 9px;
+      }
+
+      .welcome {
+        padding: 14px;
+      }
+
+      .welcome h2 {
+        font-size: 16px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- MEDICINE REMINDER MODAL -->
+  <div id="medicineReminderModal" class="medicine-reminder-overlay" hidden>
+    <div class="medicine-reminder-modal" role="dialog"
+         aria-modal="true" aria-labelledby="reminderModalTitle">
+
+      <div class="reminder-bell">
+        <span>🔔</span>
+      </div>
+
+      <p class="reminder-eyebrow">MEDICINE REMINDER</p>
+
+      <h2 id="reminderModalTitle">Time to take your medicine!</h2>
+
+      <div class="reminder-medicine-details">
+        <h3 id="modalMedicineName">Medicine name</h3>
+        <p id="modalMedicineDosage">Dosage information</p>
+        <p id="modalMedicineTime">Scheduled time</p>
+      </div>
+
+      <p class="reminder-message">
+        Please take your scheduled medicine.
+      </p>
+
+      <div class="reminder-modal-actions">
+        <button id="modalTakenButton" class="modal-taken-button" type="button">
+          ✓ Mark as Taken
+        </button>
+
+      </div>
+
+      <button id="stopReminderSound" class="stop-sound-button" type="button">
+        Stop sound
+      </button>
+    </div>
+  </div>
+
+  <!-- NEW: PATIENT USER GUIDE MODAL -->
+  <div id="userGuideModal" class="user-guide-overlay" hidden>
+    <div class="user-guide-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="userGuideTitle">
+
+      <div class="user-guide-header">
+        <div>
+          <h2 id="userGuideTitle">How to Use Medminder 💚</h2>
+          <p>Your step-by-step guide to using your Patient Dashboard.</p>
+        </div>
+
+        <button
+          type="button"
+          id="closeUserGuideButton"
+          class="user-guide-close"
+          aria-label="Close user guide">
+          &times;
+        </button>
+      </div>
+
+      <div class="user-guide-body">
+
+        <p class="guide-intro">
+          Welcome to Medminder! This guide will help you understand your
+          dashboard, connect with your caregiver, view your medicines,
+          respond to reminders, and review your medication history.
+        </p>
+
+        <section class="guide-step">
+          <h3>
+            <span class="guide-step-number">1</span>
+            Understand your dashboard
+          </h3>
+          <p>Your Patient Dashboard has four main sections:</p>
+          <ul>
+            <li><strong>Today:</strong> View your scheduled doses for the current day.</li>
+            <li><strong>Medicines:</strong> View medicines shared by your caregiver.</li>
+            <li><strong>Reminders:</strong> View today's and the next six days' scheduled reminders.</li>
+            <li><strong>History:</strong> Review doses you have recorded as taken or missed.</li>
+          </ul>
+        </section>
+
+        <section class="guide-step">
+          <h3>
+            <span class="guide-step-number">2</span>
+            Find and share your Patient ID
+          </h3>
+          <ol>
+            <li>Find the Patient QR Code panel on your Today dashboard.</li>
+            <li>Your unique Patient ID appears below the QR code.</li>
+            <li>Click <strong>Copy Patient ID</strong> to copy your ID.</li>
+            <li>You may also show your QR code to your authorized caregiver.</li>
+          </ol>
+          <div class="guide-tip">
+            <strong>Security tip:</strong> Your Patient ID identifies your account.
+            It is not your password. Share it only with someone you trust.
+          </div>
+        </section>
+
+        <section class="guide-step">
+          <h3>
+            <span class="guide-step-number">3</span>
+            Connect with your caregiver
+          </h3>
+          <ol>
+            <li>Enable <strong>Allow Caregiver Connection Requests</strong>.</li>
+            <li>Wait for your caregiver to send a connection request.</li>
+            <li>Find the Caregiver Connections panel on your dashboard.</li>
+            <li>Review the caregiver's name, email, and ID.</li>
+            <li>Click <strong>Approve</strong> if you recognize and trust the caregiver.</li>
+            <li>Click <strong>Reject</strong> if you do not recognize the request.</li>
+          </ol>
+          <p>
+            Once approved, your caregiver's connection information will appear
+            on your dashboard. Your caregiver can then assign medicines and
+            schedule reminders for you.
+          </p>
+          <div class="guide-tip">
+            <strong>Important:</strong> Enabling connection requests does not
+            automatically approve anyone. You must approve each request.
+            Your account supports one active caregiver at a time.
+          </div>
+        </section>
+
+        <section class="guide-step">
+          <h3>
+            <span class="guide-step-number">4</span>
+            View your assigned medicines
+          </h3>
+          <ol>
+            <li>Open <strong>My Medicines</strong>.</li>
+            <li>Review the medicines shared by your caregiver.</li>
+            <li>Check the medicine name, dosage, strength, and other available details.</li>
+            <li>Read the instructions provided for each medicine.</li>
+          </ol>
+          <p>
+            Your caregiver manages the medicine information. The patient
+            dashboard is intended for viewing and tracking your assigned medicines.
+          </p>
+        </section>
+
+        <section class="guide-step">
+          <h3>
+            <span class="guide-step-number">5</span>
+            Check today's medicine schedule
+          </h3>
+          <ol>
+            <li>Open <strong>Today's Schedule</strong>.</li>
+            <li>Review each scheduled medicine.</li>
+            <li>Check the medicine name, dosage, and scheduled time.</li>
+            <li>Check the current dose status.</li>
+          </ol>
+          <p>There are three possible dose statuses:</p>
+          <ul>
+            <li><strong>Pending:</strong> The dose has not yet been recorded.</li>
+            <li><strong>Dose Taken:</strong> You have recorded the dose as taken.</li>
+            <li><strong>Dose Missed:</strong> You have recorded the dose as missed.</li>
+          </ul>
+        </section>
+
+        <section class="guide-step">
+          <h3>
+            <span class="guide-step-number">6</span>
+            Respond to a medicine reminder
+          </h3>
+          <p>
+            When a scheduled reminder becomes due while your dashboard is
+            open, Medminder can display a popup and play a reminder sound.
+          </p>
+          <ul>
+            <li>
+              <strong>Mark as Taken:</strong> Select this after you have
+              actually taken your medicine. The dose will be recorded as taken.
+            </li>
+            
+            <li>
+              <strong>Stop Sound:</strong> Stops the sound, but keeps the
+              reminder popup open.
+            </li>
+          </ul>
+          <div class="guide-tip">
+            Stopping the sound does not mean the medicine has been taken.
+            Make sure you record the correct dose status.
+          </div>
+        </section>
+
+        <section class="guide-step">
+          <h3>
+            <span class="guide-step-number">7</span>
+            View your upcoming reminders
+          </h3>
+          <ol>
+            <li>Open <strong>My Reminders</strong>.</li>
+            <li>Review today's reminders and those scheduled for the following six days.</li>
+            <li>Check the date, medicine name, dosage, time, and status.</li>
+            <li>Use the available actions to record the dose as taken or missed.</li>
+          </ol>
+        </section>
+
+        <section class="guide-step">
+          <h3>
+            <span class="guide-step-number">8</span>
+            Record a dose manually
+          </h3>
+          <ol>
+            <li>Open Today's Schedule or My Reminders.</li>
+            <li>Find the correct scheduled medicine.</li>
+            <li>Select <strong>Mark as Taken</strong> if you took the dose.</li>
+            <li>Select <strong>Mark as Missed</strong> if you missed the dose.</li>
+            <li>Wait for the confirmation message.</li>
+          </ol>
+          <p>
+            Successfully recorded doses will be reflected in your schedule
+            and intake history.
+          </p>
+        </section>
+
+        <section class="guide-step">
+          <h3>
+            <span class="guide-step-number">9</span>
+            Review your intake history
+          </h3>
+          <ol>
+            <li>Open <strong>Intake History</strong>.</li>
+            <li>Review your previously recorded doses.</li>
+            <li>Check the medicine name, dosage, date, recorded time, and status.</li>
+          </ol>
+          <p>
+            Your history displays records marked as Taken or Missed.
+          </p>
+        </section>
+
+        <section class="guide-step">
+          <h3>
+            <span class="guide-step-number">10</span>
+            Disconnect your caregiver
+          </h3>
+          <ol>
+            <li>Find the Caregiver Connections section.</li>
+            <li>Review your active caregiver information.</li>
+            <li>Select <strong>Disconnect Caregiver</strong>.</li>
+            <li>Confirm the action if you want to proceed.</li>
+          </ol>
+          <p>
+            After disconnecting, shared medicines and reminders will no
+            longer appear on your dashboard. Your existing intake history
+            will remain in your account.
+          </p>
+        </section>
+
+        <section class="guide-step">
+          <h3>
+            <span class="guide-step-number">11</span>
+            Sign out safely
+          </h3>
+          <p>
+            Click <strong>Sign Out</strong> when you finish using Medminder.
+            Always sign out when using a shared or public computer.
+          </p>
+        </section>
+
+        <div class="guide-important">
+          <h3>Important reminders 💚</h3>
+          <ul>
+            <li>Keep your account password private.</li>
+            <li>Approve connection requests only from caregivers you trust.</li>
+            <li>Check your medicine details and instructions regularly.</li>
+            <li>Record your doses accurately.</li>
+            <li>
+              Keep your Patient Dashboard open and connected to the internet
+              to receive browser-based reminder popups and sounds. These
+              reminders are not guaranteed when the browser is closed or
+              your device is turned off.
+            </li>
+            <li>
+              If medicine information looks incorrect, contact your caregiver
+              or healthcare professional before taking the medicine.
+            </li>
+            <li>
+              Medminder helps organize medication schedules and does not
+              replace professional medical advice.
+            </li>
+          </ul>
+        </div>
+
+        <p style="text-align:center;color:#718078;font-size:12px;line-height:1.7;margin:22px 0 5px;">
+          Thank you for using <strong style="color:#175638;">Medminder!</strong><br>
+          Stay organized and take care of yourself.
+        </p>
+
+      </div>
+
+      <div class="user-guide-footer">
+        <span>Medminder Patient Help Guide</span>
+        <button type="button" id="closeUserGuideFooterButton" class="guide-done-button">
+          Got it!
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="loading" class="loading">
+    <div class="loading-card">
+      <div class="loading-mark">💊</div>
+      <h2 style="color:#10442b;margin:14px 0 0;">Medminder</h2>
+      <p class="muted">Loading your patient dashboard...</p>
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <!-- APPLICATION -->
+  <div id="app" class="app">
+
+    <!-- DESKTOP SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">💊</div>
+        <div>
+          <div class="brand-name">Medminder</div>
+          <div class="brand-caption">Patient workspace</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="nav-label">PATIENT WORKSPACE</div>
+
+        <nav aria-label="Main navigation">
+          <button class="nav-btn active" data-page="homeSection" type="button">
+            🏠 Today's schedule
+          </button>
+
+          <button class="nav-btn" data-page="medicinesSection" type="button">
+            💊 My medicines
+          </button>
+
+          <button class="nav-btn" data-page="remindersSection" type="button">
+            🔔 My reminders
+          </button>
+
+          <button class="nav-btn" data-page="historySection" type="button">
+            📋 Intake history
+          </button>
+        </nav>
+      </div>
+
+      <div class="sidebar-bottom">
+        <div class="nav-label">ACCOUNT</div>
+
+        <div class="user-card">
+          <div class="avatar" id="userAvatar">P</div>
+          <div class="user-info">
+            <div class="user-name" id="sideUserName">Patient</div>
+            <div class="user-role">Medicine taker</div>
+          </div>
+        </div>
+
+        <button class="logout-button" id="sidebarLogout" type="button">
+          ↪ Sign out
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1 id="welcomeTitle">Hello, welcome back!</h1>
+          <div class="muted" id="todayLabel">Your medicine schedule</div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+          <!-- NEW HELP BUTTON -->
+          <button
+            type="button"
+            id="showUserGuideButton"
+            class="help-button"
+            aria-haspopup="dialog"
+            aria-controls="userGuideModal">
+            <span>❔</span>
+            <span>How to Use</span>
+          </button>
+
+          <div class="profile-shortcut">
+            <span class="top-avatar" id="headerUserName">P</span>
+            <span class="profile-text">
+              <span class="profile-name-row">
+                <b id="headerAccountName">Patient account</b>
+                <span class="account-role-badge" id="accountRoleBadge">Patient</span>
+              </span>
+              <small class="muted">Medicine taker</small>
+            </span>
+          </div>
+        </div>
+      </header>
+
+      <!-- SCROLLABLE CONTENT -->
+      <div class="content" id="mainContent">
+
+        <div id="error" class="notice error" role="alert"></div>
+        <div id="success" class="notice success" role="status"></div>
+        <div id="info" class="notice info" role="status"></div>
+
+        <!-- HOME -->
+        <section id="homeSection" class="page active">
+          <div class="welcome">
+            <div>
+              <h2>Take care of yourself 💚</h2>
+              <p>
+                View your medicine schedule shared by your authorized caregiver
+                and record your doses when appropriate.
+              </p>
+            </div>
+            <div class="welcome-icon">💊</div>
+          </div>
+
+          <div class="stats">
+            <div class="stat">
+              <div>
+                <div class="stat-label">My medicines</div>
+                <div class="stat-caption">Shared by caregiver</div>
+              </div>
+              <div class="stat-number" id="medicineCount">0</div>
+            </div>
+
+            <div class="stat">
+              <div>
+                <div class="stat-label">Today's reminders</div>
+                <div class="stat-caption">Scheduled for today</div>
+              </div>
+              <div class="stat-number" id="todayCount">0</div>
+            </div>
+
+            <div class="stat">
+              <div>
+                <div class="stat-label">Taken today</div>
+                <div class="stat-caption">Recorded doses</div>
+              </div>
+              <div class="stat-number" id="takenCount">0</div>
+            </div>
+          </div>
+
+          <div class="content-grid">
+            <div class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Today's medicine schedule</h2>
+                  <p>Follow the schedule provided to you.</p>
+                </div>
+                <span class="tag green">Today</span>
+              </div>
+
+              <div class="panel-body">
+                <div id="todayList" class="record-list">
+                  <div class="empty-state">Loading schedule...</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="panel">
+                <div class="panel-heading">
+                  <div>
+                    <h2>Your patient QR code</h2>
+                    <p>Show this to your authorized caregiver.</p>
+                  </div>
+
+                  <span id="connectionStatusBadge" class="connection-status">
+                    Not connected
+                  </span>
+                </div>
+
+                <div class="panel-body">
+                  <p id="connectionStatus" class="muted">
+                    Your caregiver can scan your QR code to identify your account.
+                  </p>
+
+                  <div class="qr-wrap">
+                    <div id="patientQrCode" aria-label="Patient QR code">
+                      <p class="muted">Preparing your QR code...</p>
+                    </div>
+                  </div>
+
+                  <p class="muted" style="margin-bottom:8px;">
+                    Your patient ID
+                  </p>
+
+                  <div id="patientUidDisplay" class="uid-value">
+                    Loading...
+                  </div>
+
+                  <div class="button-row" style="margin-top:12px;">
+                    <button id="copyPatientUidButton" class="btn btn-secondary" type="button">
+                      📋 Copy patient ID
+                    </button>
+                  </div>
+
+                  <div class="connection-permission">
+                    <label for="allowCaregiverConnections">
+                      <input id="allowCaregiverConnections" type="checkbox">
+                      <span>Allow caregiver connection requests</span>
+                    </label>
+
+                    <p>
+                      When enabled, authorized caregivers can send you
+                      connection requests using your UID or QR code.
+                      You must still approve each request before connecting.
+                    </p>
+                  </div>
+
+                  <p class="muted" style="margin-top:13px;line-height:1.7;">
+                    Only share your ID with an authorized person you trust.
+                    This ID identifies your account; it is not a password.
+                  </p>
+                </div>
+              </div>
+
+              <!-- CONNECTION REQUESTS ARE INSERTED HERE BY JAVASCRIPT -->
+
+              <div class="panel">
+                <div class="panel-heading">
+                  <h2>Helpful reminder 💚</h2>
+                </div>
+
+                <div class="panel-body">
+                  <p class="muted" style="line-height:1.8;margin:0;">
+                    Follow your healthcare professional's instructions.
+                    If a medicine or dose looks incorrect, contact your
+                    caregiver or pharmacist before taking it.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- MEDICINES -->
+        <section id="medicinesSection" class="page">
+          <h2 class="section-heading">My medicines</h2>
+          <p class="section-description">
+            Medicines shared by your authorized caregiver.
+          </p>
+
+          <div class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Medicine list</h2>
+                <p>Review your current medicine information.</p>
+              </div>
+            </div>
+
+            <div class="panel-body">
+              <div id="medicineList" class="record-list">
+                <div class="empty-state">No medicines loaded.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- REMINDERS -->
+        <section id="remindersSection" class="page">
+          <h2 class="section-heading">My reminders</h2>
+          <p class="section-description">
+            Review your upcoming scheduled doses.
+          </p>
+
+          <div class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Upcoming reminders</h2>
+                <p>Your caregiver's scheduled reminders.</p>
+              </div>
+            </div>
+
+            <div class="panel-body">
+              <div id="reminderList" class="record-list">
+                <div class="empty-state">No reminders loaded.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- HISTORY -->
+        <section id="historySection" class="page">
+          <h2 class="section-heading">Intake history</h2>
+          <p class="section-description">
+            Review the doses you have recorded.
+          </p>
+
+          <div class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Medicine intake records</h2>
+                <p id="historyDateLabel">Showing intake records for today.</p>
+              </div>
+            </div>
+
+            <div class="panel-body">
+              <div class="history-date-controls">
+                <button id="historyPreviousDay" type="button" aria-label="Previous day">‹</button>
+                <label for="historyDatePicker">Select date</label>
+                <input id="historyDatePicker" type="date" aria-label="Choose intake history date">
+                <button id="historyNextDay" type="button" aria-label="Next day">›</button>
+              </div>
+              <div id="historyList" class="record-list">
+                <div class="empty-state">No history yet.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <p class="footer-note">
+          Medminder helps organize medicine reminders and does not replace
+          professional medical advice.
+        </p>
+      </div>
+    </main>
+  </div>
+
+  <!-- MOBILE BOTTOM NAVIGATION -->
+  <nav class="bottom-nav" aria-label="Mobile navigation">
+    <button class="nav-btn active" data-page="homeSection" type="button">
+      <span>🏠</span>
+      <span>Today</span>
+    </button>
+
+    <button class="nav-btn" data-page="medicinesSection" type="button">
+      <span>💊</span>
+      <span>Medicines</span>
+    </button>
+
+    <button class="nav-btn" data-page="remindersSection" type="button">
+      <span>🔔</span>
+      <span>Reminders</span>
+    </button>
+
+    <button class="nav-btn" data-page="historySection" type="button">
+      <span>📋</span>
+      <span>History</span>
+    </button>
+
+    <button class="nav-btn" id="mobileLogoutButton" type="button">
+      <span>↪</span>
+      <span>Sign out</span>
+    </button>
+  </nav>
+
+  <!-- QR CODE GENERATOR -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- USER GUIDE MODAL CONTROLS -->
+  <script>
+    (() => {
+      const modal = document.getElementById("userGuideModal");
+      const openButton = document.getElementById("showUserGuideButton");
+      const closeButton = document.getElementById("closeUserGuideButton");
+      const doneButton = document.getElementById("closeUserGuideFooterButton");
+
+      if (!modal || !openButton || !closeButton || !doneButton) {
+        console.error("Medminder user guide elements could not be found.");
+        return;
+      }
+
+      let previousFocus = null;
+
+      function openGuide() {
+        previousFocus = document.activeElement;
+        modal.hidden = false;
+        document.body.style.overflow = "hidden";
+        closeButton.focus();
+      }
+
+      function closeGuide() {
+        modal.hidden = true;
+        document.body.style.overflow = "";
+
+        if (previousFocus && typeof previousFocus.focus === "function") {
+          previousFocus.focus();
+        }
+      }
+
+      openButton.addEventListener("click", openGuide);
+      closeButton.addEventListener("click", closeGuide);
+      doneButton.addEventListener("click", closeGuide);
+
+      modal.addEventListener("click", (event) => {
+        if (event.target === modal) {
+          closeGuide();
+        }
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !modal.hidden) {
+          closeGuide();
+        }
+      });
+    })();
+  </script>
+
+  <!-- PATIENT DASHBOARD JAVASCRIPT -->
+  <script type="module" src="./js/patient-dashboard.js"></script>
+
+</body>
+</html>

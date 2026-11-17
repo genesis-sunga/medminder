@@ -1,0 +1,27 @@
+{
+  "name": "Medminder",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bookworm",
+  "forwardPorts": [3000, 4000, 5001, 9000, 9099],
+  "portsAttributes": {
+    "3000": {
+      "label": "Medminder Website",
+      "onAutoForward": "openBrowser"
+    },
+    "4000": {
+      "label": "Firebase Emulator UI",
+      "onAutoForward": "notify"
+    },
+    "5001": {
+      "label": "Firebase Functions Emulator",
+      "onAutoForward": "notify"
+    },
+    "9000": {
+      "label": "Firebase Database Emulator",
+      "onAutoForward": "notify"
+    },
+    "9099": {
+      "label": "Firebase Auth Emulator",
+      "onAutoForward": "notify"
+    }
+  }
+}

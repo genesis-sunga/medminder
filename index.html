@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#175638">
+  <title>Medminder | Your Health, On Schedule</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --green: #175638;
+      --green-dark: #10442b;
+      --green-light: #e7f4eb;
+      --background: #f2f7f3;
+      --text: #203b2d;
+      --muted: #78867d;
+      --white: #ffffff;
+    }
+
+    body {
+      font-family: Inter, Arial, sans-serif;
+      background: var(--background);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    a {
+      text-decoration: none;
+    }
+
+    .navbar {
+      width: 100%;
+      padding: 22px 7%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      color: var(--green);
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .brand-icon {
+      width: 43px;
+      height: 43px;
+      display: grid;
+      place-items: center;
+      background: var(--green-light);
+      border-radius: 13px;
+    }
+
+    .brand-icon svg {
+      width: 34px;
+      height: 34px;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+    }
+
+    .login-link {
+      color: var(--green);
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .button {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      padding: 13px 22px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      transition: 0.2s;
+    }
+
+    .button-primary {
+      background: var(--green);
+      color: white;
+    }
+
+    .button-primary:hover {
+      background: var(--green-dark);
+      transform: translateY(-1px);
+    }
+
+    .button-outline {
+      border: 1px solid #b8d4c1;
+      color: var(--green);
+      background: white;
+    }
+
+    .hero {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 75px 7% 85px;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      align-items: center;
+      gap: 65px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      padding: 8px 13px;
+      margin-bottom: 22px;
+      border-radius: 30px;
+      background: var(--green-light);
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .hero h1 {
+      font-size: clamp(38px, 5vw, 60px);
+      line-height: 1.12;
+      letter-spacing: -2px;
+      margin-bottom: 22px;
+    }
+
+    .hero h1 span {
+      color: var(--green);
+    }
+
+    .hero-description {
+      max-width: 480px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.8;
+      margin-bottom: 30px;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 13px;
+      margin-bottom: 27px;
+    }
+
+    .hero-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .preview {
+      position: relative;
+      background: white;
+      padding: 25px;
+      border-radius: 25px;
+      border: 1px solid #e3eee6;
+      box-shadow: 0 22px 55px rgba(23, 86, 56, 0.12);
+    }
+
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 22px;
+    }
+
+    .preview-header h3 {
+      font-size: 17px;
+    }
+
+    .preview-header span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .reminder-card {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 18px;
+      border-radius: 15px;
+      background: var(--green);
+      color: white;
+      margin-bottom: 15px;
+    }
+
+    .reminder-icon {
+      width: 45px;
+      height: 45px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      border-radius: 13px;
+      background: rgba(255,255,255,0.17);
+      font-size: 23px;
+    }
+
+    .reminder-card small {
+      display: block;
+      opacity: 0.8;
+      font-size: 11px;
+      margin-bottom: 5px;
+    }
+
+    .reminder-card strong {
+      display: block;
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+
+    .reminder-card p {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    .dose-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 0;
+      border-bottom: 1px solid #edf2ee;
+      gap: 12px;
+    }
+
+    .dose-row:last-child {
+      border-bottom: none;
+    }
+
+    .dose-name {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .dose-time {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 5px;
+    }
+
+    .status {
+      color: var(--green);
+      background: var(--green-light);
+      border-radius: 20px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .features {
+      padding: 65px 7%;
+      background: white;
+      text-align: center;
+    }
+
+    .section-label {
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .features h2 {
+      font-size: 32px;
+      letter-spacing: -0.8px;
+      margin-bottom: 13px;
+    }
+
+    .section-description {
+      max-width: 540px;
+      margin: 0 auto 40px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .feature-grid {
+      max-width: 1050px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      text-align: left;
+    }
+
+    .feature-card {
+      padding: 25px;
+      border: 1px solid #e3eee6;
+      border-radius: 16px;
+      background: #fcfdfc;
+    }
+
+    .feature-icon {
+      width: 45px;
+      height: 45px;
+      display: grid;
+      place-items: center;
+      border-radius: 13px;
+      background: var(--green-light);
+      color: var(--green);
+      font-size: 21px;
+      margin-bottom: 18px;
+    }
+
+    .feature-card h3 {
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    .feature-card p {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    .role-section {
+      padding: 65px 7%;
+      text-align: center;
+    }
+
+    .role-grid {
+      max-width: 900px;
+      margin: 35px auto 0;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      text-align: left;
+    }
+
+    .role-card {
+      padding: 27px;
+      border-radius: 18px;
+      background: white;
+      border: 1px solid #e3eee6;
+    }
+
+    .role-card h3 {
+      color: var(--green);
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    .role-card p {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    footer {
+      padding: 25px 7%;
+      background: white;
+      border-top: 1px solid #e8eee9;
+      color: var(--muted);
+      text-align: center;
+      font-size: 12px;
+    }
+
+    @media (max-width: 800px) {
+      .hero {
+        grid-template-columns: 1fr;
+        gap: 40px;
+        padding-top: 45px;
+      }
+
+      .preview {
+        max-width: 500px;
+        width: 100%;
+        margin: auto;
+      }
+
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .features h2 {
+        font-size: 27px;
+      }
+    }
+
+    @media (max-width: 500px) {
+      .navbar {
+        padding: 17px 5%;
+      }
+
+      .brand {
+        font-size: 18px;
+      }
+
+      .brand-icon {
+        width: 37px;
+        height: 37px;
+      }
+
+      .nav-actions {
+        gap: 13px;
+      }
+
+      .nav-actions .button {
+        padding: 10px 13px;
+        font-size: 12px;
+      }
+
+      .login-link {
+        font-size: 12px;
+      }
+
+      .hero {
+        padding: 40px 6% 60px;
+      }
+
+      .hero h1 {
+        letter-spacing: -1.3px;
+      }
+
+      .hero-description {
+        font-size: 14px;
+      }
+
+      .preview {
+        padding: 18px;
+      }
+
+      .role-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .features,
+      .role-section {
+        padding: 50px 6%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav class="navbar">
+    <a href="index.html" class="brand" aria-label="Medminder home">
+      <span class="brand-icon" aria-hidden="true">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+          <g transform="rotate(-42 32 32)">
+            <rect x="13" y="23" width="38" height="18"
+                  rx="9" fill="#ffffff"/>
+            <path d="M32 23h10a9 9 0 0 1 0 18H32z"
+                  fill="#a8e6be"/>
+            <path d="M32 23v18"
+                  stroke="#175638" stroke-width="2"/>
+          </g>
+          <path d="M31 12v10M26 17h10"
+                stroke="#a8e6be" stroke-width="3"
+                stroke-linecap="round"/>
+        </svg>
+      </span>
+      Medminder
+    </a>
+
+    <div class="nav-actions">
+      <a href="login.html" class="login-link">Log In</a>
+      <a href="signup.html" class="button button-primary">Get Started</a>
+    </div>
+  </nav>
+
+  <main>
+    <section class="hero">
+      <div>
+        <span class="eyebrow">A simpler way to manage medications</span>
+
+        <h1>
+          Your health,<br>
+          <span>on schedule.</span>
+        </h1>
+
+        <p class="hero-description">
+          Medminder helps you stay on track with your medications.
+          Let a trusted person organize your medicine schedule,
+          while you receive reminders when it's time for your dose.
+        </p>
+
+        <div class="hero-actions">
+          <a href="signup.html" class="button button-primary">
+            Get Started
+          </a>
+
+          <a href="login.html" class="button button-outline">
+            I have an account
+          </a>
+        </div>
+
+        <p class="hero-note">
+          Designed for medicine takers and the people who help care for them.
+        </p>
+      </div>
+
+      <div class="preview">
+        <div class="preview-header">
+          <h3>Today's Schedule</h3>
+          <span>Sample preview</span>
+        </div>
+
+        <div class="reminder-card">
+          <div class="reminder-icon">🔔</div>
+          <div>
+            <small>Next medication reminder</small>
+            <strong>08:00 AM</strong>
+            <p>Morning dose</p>
+          </div>
+        </div>
+
+        <div class="dose-row">
+          <div>
+            <div class="dose-name">Morning dose</div>
+            <div class="dose-time">08:00 AM</div>
+          </div>
+          <span class="status">Upcoming</span>
+        </div>
+
+        <div class="dose-row">
+          <div>
+            <div class="dose-name">Midday dose</div>
+            <div class="dose-time">12:00 PM</div>
+          </div>
+          <span class="status">Scheduled</span>
+        </div>
+
+        <div class="dose-row">
+          <div>
+            <div class="dose-name">Evening dose</div>
+            <div class="dose-time">06:00 PM</div>
+          </div>
+          <span class="status">Scheduled</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="features">
+      <p class="section-label">How Medminder helps</p>
+      <h2>Medication management, made easier</h2>
+      <p class="section-description">
+        Keep medication schedules organized and make it easier
+        to remember when it's time to take a dose.
+      </p>
+
+      <div class="feature-grid">
+        <article class="feature-card">
+          <div class="feature-icon">📅</div>
+          <h3>Organized schedules</h3>
+          <p>
+            An authorized person can add medicines and set
+            reminder times for the medicine taker.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon">🔔</div>
+          <h3>Timely reminders</h3>
+          <p>
+            Medicine takers can receive reminders for their
+            scheduled doses and record when they take them.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon">🤝</div>
+          <h3>Connected care</h3>
+          <p>
+            Keep the authorized person and medicine taker
+            connected through a shared medication plan.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="role-section">
+      <p class="section-label">For your care team</p>
+      <h2>Two roles. One shared schedule.</h2>
+      <p class="section-description">
+        Medminder gives each user the features they need.
+      </p>
+
+      <div class="role-grid">
+        <article class="role-card">
+          <h3>Authorized Person</h3>
+          <p>
+            Manage medication details, add medicines, set
+            reminder times, and review the medicine taker's
+            intake records.
+          </p>
+        </article>
+
+        <article class="role-card">
+          <h3>Medicine Taker</h3>
+          <p>
+            View upcoming doses, receive reminders, mark
+            medicines as taken, and review personal intake history.
+          </p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    © 2026 Medminder. Your health, on schedule.
+  </footer>
+
+</body>
+</html>
